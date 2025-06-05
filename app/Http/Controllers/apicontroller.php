@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\MovieCollection;
+use App\Http\Resources\MovieResource;
 use App\Models\User;
+use App\Models\Movie;
 class apicontroller extends Controller
 {
     function register(Request $request)
@@ -14,7 +17,7 @@ class apicontroller extends Controller
         'email' => 'required|string|email|max:255|unique:users',
         'password' => 'required|string|min:8|confirmed',
     ]);
-    $user = \App\Models\User::create([
+    $user = User::create([
         'name' => $request->name,
         'email' => $request->email,
         'password' => bcrypt($request->password),
@@ -45,6 +48,28 @@ class apicontroller extends Controller
         //     'user' => new UserResource($user),
         //     'token' => $token,
         // ]);
-        return apiSuccessResponse($user,'Login successful');
+        return apiSuccessResponse($user,'Login successful', $token);
+    }
+    function logout(Request $request)
+    {
+        $user = auth()->user();
+        $user->tokens()->delete();
+        return apiSuccessResponse(null, 'Logged out successfully');
+    }
+    function movies()
+    {
+        $movies = Movie::all();
+        $movies = new MovieCollection($movies);
+        return apiSuccessResponse($movies, 'Movies retrieved successfully');
+    }
+    function movieDetail($id)
+    {
+        $movie = Movie::find($id);
+        if (!$movie)
+        {
+            return response()->json(['message' => 'Movie not found'], 404);
+        }
+        $movie = new MovieResource($movie);
+        return apiSuccessResponse($movie, 'Movie retrieved successfully');
     }
 }
