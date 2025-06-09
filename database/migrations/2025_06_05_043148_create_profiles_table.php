@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('profiles', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('profile_id')->constrained('profiles')->onDelete('cascade')->onupdate('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade')->onupdate('cascade');
             $table->string('name');
             $table->integer('age')->nullable();
             $table->boolean('is_kid');
@@ -26,6 +26,9 @@ return new class extends Migration
      */
     public function down(): void
     {
+            Schema::table('profiles', function (Blueprint $table) {
+        $table->dropForeign(['profile_id']); // Drops FK constraint
+    });
         Schema::dropIfExists('profiles');
     }
 };

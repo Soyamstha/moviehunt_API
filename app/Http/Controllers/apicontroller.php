@@ -5,10 +5,16 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\MovieCollection;
+use App\Http\Resources\GenreCollection;
 use App\Http\Resources\MovieResource;
 use App\Models\User;
 use App\Models\Movie;
-class apicontroller extends Controller
+use App\Models\Genre;
+use App\Models\Profile;
+use App\Models\Favorite;
+use App\Models\MovieGenres;
+use App\Models\Rating;
+class ApiController extends Controller
 {
     function register(Request $request)
     {
@@ -17,17 +23,27 @@ class apicontroller extends Controller
         'email' => 'required|string|email|max:255|unique:users',
         'password' => 'required|string|min:8|confirmed',
     ]);
-    $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => bcrypt($request->password),
-    ]);
+
+    \DB::transaction(function () use($request) {
+            $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+        ]);
+        $profile = $user->profile()->create([
+            'user_id' => $user->id,
+            'name' => $request->name,
+            'is_kid' => 1
+        ]);
+
+    });
+    $user = new UserResource($user);
+    return apiSuccessResponse($user,'User created successfully');
     // return response()->json([
     //     // 'message' => 'User created successfully',
     //     // 'user' => new UserResource($user),
     // ]);
-    $user = new UserResource($user);
-    return apiSuccessResponse($user,'User created successfully');
+
     }
     function login(Request $request)
     {
@@ -58,18 +74,150 @@ class apicontroller extends Controller
     }
     function movies()
     {
-        $movies = Movie::all();
+        $movies = Movie::paginate(10);
         $movies = new MovieCollection($movies);
         return apiSuccessResponse($movies, 'Movies retrieved successfully');
     }
     function movieDetail($id)
     {
-        $movie = Movie::find($id);
-        if (!$movie)
-        {
-            return response()->json(['message' => 'Movie not found'], 404);
-        }
+        $movie = Movie::with('genres')->find($id);
+        // $movieGenres = MovieGenres::where('movie_id', $id)->get();
+        // $genres = [];
+        // foreach ($movieGenres as $movieGenre) {
+        //     $genre = Genres::find($movieGenre->genre_id);
+        //     if ($genre) {
+        //         $genres[] = $genre->name;
+        //     }
+        // }
+        // if (!$movie)
+        // {
+        //     return response()->json(['message' => 'Movie not found'], 404);
+        // }
         $movie = new MovieResource($movie);
         return apiSuccessResponse($movie, 'Movie retrieved successfully');
     }
+    function profile()
+    {
+        $user = auth()->user();
+        $profile = $user->profile;
+        return apiSuccessResponse($profile, 'Profile retrieved successfully');
+    }
+    function profile_edit($id, Request $request)
+    {
+        $user = auth()->user();
+        $profile = Profile::find($id);
+        if (!$profile) {
+            return response()->json(['message' => 'Profile not found'], 404);
+        }
+        if(request('age') >= 18) {
+            $profile->update([
+                'name' => request('name'),
+                'age' => request('age'),
+                'is_kid' => false
+            ]);
+            $user->update([
+                'name' => request('name'),
+            ]);
+            }
+            else {
+                $profile->update([
+                    'name' => request('name'),
+                    'age' => request('age'),
+                    'is_kid' => true
+                ]);
+            }
+        return apiSuccessResponse($profile, 'Profile updated successfully');
+    }
+    function profile_delete(Request $request)
+    {
+        $user = auth()->user();
+        $profile = $user->profile;
+        if (!$profile) {
+            return response()->json(['message' => 'Profile not found'], 404);
+        }
+        $profile->delete();
+        $user->delete();
+        $user->tokens()->delete();
+        return apiSuccessResponse(null, 'Profile deleted successfully');
+    }
+    function view_favorite(Request $request)
+    {
+        $user = auth()->user();
+        $favorites = Favorite::where('Profile_id', $user->id)->with('movie')->get();
+        if ($favorites->isEmpty()) {
+            return response()->json(['message' => 'No favorites found'], 404);
+        }
+        return apiSuccessResponse($favorites, 'Favorites retrieved successfully');
+    }
+    function add_favorite(Request $request,$id)
+    {
+        $user = auth()->user();
+        $movie = Movie::find($id);
+        $movieId = $id;
+        if (!$movie) {
+            return response()->json(['message' => 'Movie not found'], 404);
+        }
+        else{
+            $favorite = Favorite::where('profile_id', $user->id)->where('movie_id', $movieId)->first();
+            if ($favorite) {
+                return response()->json(['message' => 'Movie already in favorites'], 400);
+            }
+            $favorite = new Favorite();
+            $favorite->profile_id = $user->id;
+            $favorite->movie_id = $movieId;
+            $favorite->save();
+        }
+        return apiSuccessResponse(null, 'Movie added to favorites successfully');
+    }
+    function remove_favorite(Request $request,$id)
+    {
+        $user = auth()->user();
+        $movie = Movie::find($id);
+        if (!$movie) {
+            return response()->json(['message' => 'Movie not found'], 404);
+        }
+        $favorite = Favorite::where('profile_id', $user->id)->where('movie_id', $id)->first();
+        if (!$favorite) {
+            return response()->json(['message' => 'Movie not in favorites'], 404);
+        }
+        $favorite->delete();
+        return apiSuccessResponse(null, 'Movie removed from favorites successfully');
+    }
+    function search_movies(Request $request)
+    {
+        $movieName = $request->input('name');
+        $movieGenre = $request->input('genre');
+        $query = Movie::query();
+        $query = $query->where('title','like', "%".$movieName."%", 'or', 'genres', 'like', "%".$movieGenre."%");
+        $movies = $query->paginate(10);
+        if ($movies->isEmpty()) {
+            return response()->json(['message' => 'No movies found'], 404);
+        }
+        $movies = new MovieCollection($movies);
+        return apiSuccessResponse($movies, 'Movies retrieved successfully');
+    }
+    function movies_genre()
+    {
+        $genres = Genre::all();
+        if ($genres->isEmpty()) {
+            return response()->json(['message' => 'No genres found'], 404);
+        }
+        $genres = new GenreCollection($genres);
+        return apiSuccessResponse($genres, 'Genres retrieved successfully');
+    }
+    function add_user_rating(Request $request,$id)
+    {
+        $user = auth()->user();
+        $Ratings = new rating();
+        $Ratings->profile_id = $user->id;
+        $Ratings->movie_id = $id;
+        if($request->input('rating')>5)
+        {
+            return response()->json(['message' => 'Rating is higher then 5. please give rating from 1-5'], 404);
+        }
+        $Rating->rating = $request->input('rating');
+        $Rating->review = $request->input('review');
+        $favorite->save();
+    }
 }
+

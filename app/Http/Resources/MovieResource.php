@@ -25,6 +25,8 @@ class MovieResource extends JsonResource
             'language' => $this->language,
             'thumbnail_url' => $this->thumbnail_url,
             'trailer_url' => $this->trailer_url,
+            'video_url' => $this->video_url,
+            'genres' => $this->whenLoaded('genres', new GenreCollection($this->genres))
         ];
     }
 }

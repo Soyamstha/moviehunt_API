@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('language')->nullable();
             $table->string('thumbnail_url')->nullable();
             $table->string('trailer_url')->nullable();
+            $table->string('video_url')->nullable();
             $table->timestamps();
         });
     }
