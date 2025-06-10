@@ -7,6 +7,7 @@ use App\Http\Resources\UserResource;
 use App\Http\Resources\MovieCollection;
 use App\Http\Resources\GenreCollection;
 use App\Http\Resources\MovieResource;
+use App\Http\Resources\ProfileResource;
 use App\Models\User;
 use App\Models\Movie;
 use App\Models\Genre;
@@ -100,6 +101,8 @@ class ApiController extends Controller
     {
         $user = auth()->user();
         $profile = $user->profile;
+        // dd($profile);
+        $profile = new ProfileResource($profile);
         return apiSuccessResponse($profile, 'Profile retrieved successfully');
     }
     function profile_edit($id, Request $request)
@@ -117,6 +120,8 @@ class ApiController extends Controller
             ]);
             $user->update([
                 'name' => request('name'),
+                'email'=>request('email'),
+                'password' => bcrypt($request->password)
             ]);
             }
             else {
@@ -125,6 +130,11 @@ class ApiController extends Controller
                     'age' => request('age'),
                     'is_kid' => true
                 ]);
+                $user->update([
+                'name' => request('name'),
+                'email'=>request('email'),
+                'password' => bcrypt($request->password)
+            ]);
             }
         return apiSuccessResponse($profile, 'Profile updated successfully');
     }
@@ -208,16 +218,25 @@ class ApiController extends Controller
     function add_user_rating(Request $request,$id)
     {
         $user = auth()->user();
-        $Ratings = new rating();
-        $Ratings->profile_id = $user->id;
-        $Ratings->movie_id = $id;
-        if($request->input('rating')>5)
+        $rating = new Rating();
+        $rating->profile_id = $user->id;
+        $rating->movie_id = $id;
+        if($request->input('rating') < 1 || $request->input('rating') > 5)
         {
-            return response()->json(['message' => 'Rating is higher then 5. please give rating from 1-5'], 404);
+            return response()->json(['message' => 'Rating must be between 1 and 5'], 400);
         }
-        $Rating->rating = $request->input('rating');
-        $Rating->review = $request->input('review');
-        $favorite->save();
+        $rating->rating = $request->input('rating');
+        $rating->review = $request->input('review');
+        $rating->save();
+        return apiSuccessResponse(null, 'Rating added successfully');
+    }
+    function movies_rating()
+    {
+        $ratings = Rating::with('movie')->paginate(10);
+        if ($ratings->isEmpty()) {
+            return response()->json(['message' => 'No ratings found'], 404);
+        }
+        return apiSuccessResponse($ratings, 'Ratings retrieved successfully');
     }
 }
 
