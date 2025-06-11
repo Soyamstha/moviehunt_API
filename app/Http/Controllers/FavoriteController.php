@@ -14,7 +14,7 @@ class FavoriteController extends Controller
         $user = auth()->user();
         $favorites = Favorite::where('Profile_id', $user->id)->with('movie')->get();
         if ($favorites->isEmpty()) {
-            return response()->json(['message' => 'No favorites found'], 404);
+            return response()->json(['message' => 'No favorites found','status'=>'true','data'=>null], 404);
         }
         return apiSuccessResponse($favorites, 'Favorites retrieved successfully');
     }

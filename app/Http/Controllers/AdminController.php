@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use App\Models\Movie;
+use App\Models\User;
 use App\Models\Genre;
 use App\Models\MovieGenres;
 use Illuminate\Http\Request;
@@ -91,5 +92,15 @@ $movie->genres()->attach($request->input('genres'));
         $movie->genres()->detach();
         $movie->delete();
         return response()->json(['message' => 'Movie deleted successfully'], 200);
+    }
+    function user_admin_access($id)
+    {
+        $user=User::find($id);
+        if(!$user)
+        {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+        $user->is_admin =true;
+        $user->save();
     }
 }

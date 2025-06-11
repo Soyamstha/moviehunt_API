@@ -68,9 +68,16 @@ class ProfileController extends Controller
         if (!$profile) {
             return response()->json(['message' => 'Profile not found'], 404);
         }
-        $profile->delete();
-        $user->delete();
-        $user->tokens()->delete();
-        return apiSuccessResponse(null, 'Profile deleted successfully');
+        if ($request->input('password') !== $user->password)
+        {
+            return response()->json(['message' => 'password wrong'], 404);
+        }
+        else
+        {
+            $profile->delete();
+            $user->delete();
+            $user->tokens()->delete();
+            return apiSuccessResponse(null, 'Profile deleted successfully');
+        }
     }
 }
