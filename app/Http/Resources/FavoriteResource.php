@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class UserResource extends JsonResource
+class FavoriteResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -17,11 +17,11 @@ class UserResource extends JsonResource
         // return parent::toArray($request);
         return [
             'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'is_admin' => $this->is_admin,
+            'user_id' => $this->user_id,
+            'movie_id' => $this->movie_id,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'movie' => new MovieResource($this->whenLoaded('movie')),
         ];
     }
 }

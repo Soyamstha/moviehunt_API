@@ -23,6 +23,7 @@ class LoginController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
+            'is_admin' => 0
         ]);
         $profile = $user->profile()->create([
             'user_id' => $user->id,

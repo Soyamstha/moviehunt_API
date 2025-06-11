@@ -38,9 +38,26 @@ class MovieController extends Controller
     function search_movies(Request $request)
     {
         $movieName = $request->input('name');
-        $movieGenre = $request->input('genre');
+        $genres = $request->input('gen');
+
+        // dd($request->all());{}
+        if ($movieName == null && $genres == null){
+            return response()->json(['message' => 'there is no movie name and genre'], 404);
+
+        }
+
         $query = Movie::query();
-        $query = $query->where('title','like', "%".$movieName."%");
+        if($movieName!=null)
+        {
+            $query = $query->where('title','like', "%".$movieName."%");
+        }
+        if($genres!=null)
+        {
+                $query = $query->whereHas('genres',function ($q) use ($genres) {
+                    $q->whereIn('genres.id', $genres);
+                });
+        }
+
         $movies = $query->paginate(10);
         if ($movies->isEmpty()) {
             return response()->json(['message' => 'No movies found'], 404);

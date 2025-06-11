@@ -1,0 +1,95 @@
+<?php
+
+namespace App\Http\Controllers;
+use App\Models\Movie;
+use App\Models\Genre;
+use App\Models\MovieGenres;
+use Illuminate\Http\Request;
+
+class AdminController extends Controller
+{
+    function add_movie(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'release_date' => 'required|date',
+            'duration'=> 'required|integer|min:100',
+            'rating' => 'required|String|min:0|max:10',
+            'language' => 'required|string|max:255',
+            'thumbnail_url' => 'required|url',
+            'trailer_url' => 'required|url',
+            'video_url' => 'required|url',
+            'genres' => 'required|array',
+            'genres.*' => 'exists:genres,id'
+        ]);
+// dd($validated);
+        // $movie = new Movie();
+        // $movie->title = $request->input('title');
+        // $movie->description = $request->input('description');
+        // $movie->release_date = $request->input('release_date');
+        // $movie->duration = $request->input('duration');
+        // $movie->rating = $request->input('rating');
+        // $movie->language = $request->input('language');
+        // $movie->thumbnail_url = $request->input('thumbnail_url');
+        // $movie->trailer_url = $request->input('trailer_url');
+        // $movie->video_url = $request->input('video_url');
+        // $movie->save();
+
+        unset($validated['genres']);
+$movie = Movie::create($validated);
+$movie->genres()->attach($request->input('genres'));
+        // $moviegenres = [];
+        // foreach ($request->input('genres') as $genreId) {
+        //     $moviegenres[] = [
+        //         'movie_id' => $movie->id,
+        //         'genre_id' => $genreId
+        //     ];
+        //     MovieGenres::insert($moviegenres);
+        // }
+        return response()->json(['message' => 'Movie added successfully', 'movie' => $movie], 201);
+    }
+    function add_genre(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:genres,name'
+        ]);
+        $genre = Genre::create($validated);
+        return response()->json(['message' => 'Genre added successfully', 'genre' => $genre], 201);
+    }
+    function update_movie(Request $request, $id)
+    {
+        $movie = Movie::find($id);
+        if (!$movie) {
+            return response()->json(['message' => 'Movie not found'], 404);
+        }
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'release_date' => 'required|date',
+            'duration'=> 'required|integer|min:100',
+            'rating' => 'required|String|min:0|max:10',
+            'language' => 'required|string|max:255',
+            'thumbnail_url' => 'required|url',
+            'trailer_url' => 'required|url',
+            'video_url' => 'required|url',
+            'genres' => 'required|array',
+            'genres.*' => 'exists:genres,id'
+        ]);
+        unset($validated['genres']);
+        $movie->update($validated);
+        $movie->genres()->sync($request->input('genres'));
+        return response()->json(['message' => 'Movie updated successfully', 'movie' => $movie], 200);
+    }
+    function delete_movie($id)
+    {
+        $movie = Movie::find($id);
+        if (!$movie)
+        {
+            return response()->json(['message' => 'Movie not found'], 404);
+        }
+        $movie->genres()->detach();
+        $movie->delete();
+        return response()->json(['message' => 'Movie deleted successfully'], 200);
+    }
+}

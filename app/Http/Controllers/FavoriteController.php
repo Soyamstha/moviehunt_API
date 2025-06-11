@@ -51,5 +51,6 @@ class FavoriteController extends Controller
         }
         $favorite->delete();
         return apiSuccessResponse(null, 'Movie removed from favorites successfully');
+
     }
 }
