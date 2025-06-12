@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Models\User;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\UserRatingCollection;
 use App\Models\Rating;
 use Illuminate\Http\Request;
 
@@ -23,12 +24,15 @@ class RatingController extends Controller
         $rating->save();
         return apiSuccessResponse(null, 'Rating added successfully');
     }
-    function movies_rating()
+    function movies_rating($id)
     {
-        $ratings = Rating::with('movie')->paginate(10);
-        if ($ratings->isEmpty()) {
-            return response()->json(['message' => 'No ratings found'], 404);
+        $user = auth()->user();
+        $ratings = Rating::with('profile')->where('movie_id', $id)->get();
+        if ($ratings->isEmpty())
+        {
+            return response()->json(['message' => 'No ratings found for this movie'], 404);
         }
+        $ratings= new UserRatingCollection($ratings);
         return apiSuccessResponse($ratings, 'Ratings retrieved successfully');
     }
 }

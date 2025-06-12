@@ -68,7 +68,7 @@ class ProfileController extends Controller
         if (!$profile) {
             return response()->json(['message' => 'Profile not found'], 404);
         }
-        if ($request->input('password') !== $user->password)
+        if ($request->input('password') == $user->password)
         {
             return response()->json(['message' => 'password wrong'], 404);
         }
