@@ -36,15 +36,12 @@ class ProfileController extends Controller
                 $user->update([
                 'name' => request('name'),
                 'email'=>$user->email,
-                'password' =>$user->password
             ]);
             }
             else{
                 $user->update([
                     'name' => request('name'),
                     'email'=>request('email'),
-                    // 'password' => bcrypt($request->password)
-                    'password' =>$user->password
                 ]);
             }
             }
@@ -57,7 +54,6 @@ class ProfileController extends Controller
                 $user->update([
                 'name' => request('name'),
                 'email'=>request('email'),
-                'password' => bcrypt($request->password)
             ]);
             }
         return apiSuccessResponse($profile, 'Profile updated successfully');

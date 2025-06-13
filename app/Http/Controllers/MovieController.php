@@ -14,8 +14,6 @@ class MovieController extends Controller
 {
     function movies()
     {
-        $movies = Movie::paginate(8);
-        $movies = new MovieCollection($movies);
         $pagination =Movie::paginate(8);
         return apiSuccessResponse($pagination, 'Movies retrieved successfully');
 
