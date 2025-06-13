@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\MovieCollection;
 use App\Http\Resources\GenreCollection;
 use App\Http\Resources\MovieResource;
+use App\Http\Resources\PaginationCollection;
 use App\Models\Movie;
 use App\Models\Genre;
 use App\Models\MovieGenres;
@@ -13,9 +14,16 @@ class MovieController extends Controller
 {
     function movies()
     {
-        $movies = Movie::paginate(10);
+        $movies = Movie::paginate(8);
         $movies = new MovieCollection($movies);
-        return apiSuccessResponse($movies, 'Movies retrieved successfully');
+        $pagination =Movie::paginate(8);
+        return apiSuccessResponse($pagination, 'Movies retrieved successfully');
+
+        // $movie_pagination = Movie::paginate(6);
+        // $items = new MovieCollection($movie_pagination->items());
+        // $total = $movie_pagination->currentPage();
+        // $data = compact('items','total');
+        // return apiSuccessResponse($data, 'Movies retrieved successfully');
     }
     function movieDetail($id)
     {
