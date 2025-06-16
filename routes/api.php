@@ -8,6 +8,7 @@ use App\Http\Controllers\RatingController;
 use App\Http\Controllers\AdminController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use App\Models\User;
 
 Route::get('/user', function (Request $request) {
@@ -21,7 +22,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::Post('/logout',[LoginController::class, 'logout']);
     Route::get('/profile',[ProfileController::class, 'profile']);
     Route::Post('/profile-edit',[ProfileController::class, 'profile_edit']);
-    Route::delete('/profile-delete',[ProfileController::class, 'profile_delete']);
+    Route::Post('/profile-delete',[ProfileController::class, 'profile_delete']);
     Route::get('/view-favorite',[FavoriteController::class, 'view_favorite']);
     Route::Post('/add-favorite/{id}',[FavoriteController::class, 'add_favorite']);
     Route::delete('/remove-favorite/{id}',[FavoriteController::class, 'remove_favorite']);
@@ -37,3 +38,23 @@ Route::get('/movie-detail/{id}', [MovieController::class, 'movieDetail']);
 Route::Post('/search-movies',[MovieController::class, 'search_movies']);
 Route::get('/movies-genre', [MovieController::class, 'movies_genre']);
 Route::get('/users-rating/{id}', [RatingController::class, 'movies_rating']);
+
+Route::get('/email/verify', function () {
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+//verfiy email
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $request->fulfill();
+    return response()->json(['message' => 'Email verified']);
+})->middleware(['auth:sanctum', 'signed'])->name('verification.verify');
+
+// Resend verification email
+Route::post('/email/verification-notification', function (Request $request) {
+    if ($request->user()->hasVerifiedEmail()) {
+        return response()->json(['message' => 'Already verified']);
+    }
+
+    $request->user()->sendEmailVerificationNotification();
+
+    return response()->json(['message' => 'Verification link sent']);
+})->middleware(['auth:sanctum', 'throttle:6,1'])->name('verification.send');

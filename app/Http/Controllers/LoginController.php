@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\ProfileResource;
+use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Profile;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
@@ -22,7 +25,7 @@ class LoginController extends Controller
             $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => bcrypt($request->password),
+            'password' => Hash::make($request->password),
             'is_admin' => 0
         ]);
         $profile = $user->profile()->create([
@@ -32,8 +35,10 @@ class LoginController extends Controller
         ]);
 
     });
-    $user = new UserResource($user);
-    return apiSuccessResponse($user,'User created successfully');
+    event(new Registered($user));
+    return response()->json(['message' => 'Registered. Please verify your email.'], 201);
+    // $user = new UserResource($user);
+    // return apiSuccessResponse($user,'User created successfully');
     // return response()->json([
     //     // 'message' => 'User created successfully',
     //     // 'user' => new UserResource($user),

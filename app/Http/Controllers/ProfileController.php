@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\ProfileResource;
+use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Profile;
 
@@ -58,14 +59,17 @@ class ProfileController extends Controller
             }
         return apiSuccessResponse($profile, 'Profile updated successfully');
     }
+
     function profile_delete(Request $request)
     {
         $user = auth()->user();
         $profile = $user->profile;
+        $password =Hash::make($request->password);
         if (!$profile) {
             return response()->json(['message' => 'Profile not found'], 404);
         }
-        if ($request->input('password') == $user->password)
+
+        if (!Hash::check($request->password,$user->password))
         {
             return response()->json(['message' => 'password wrong'], 404);
         }
