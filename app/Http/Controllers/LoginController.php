@@ -93,5 +93,23 @@ class LoginController extends Controller
         'email' => 'required|email',
         'password' => 'required|min:8|confirmed',
         ]);
+        $status = Password::reset(
+        $request->only('email', 'password', 'password_confirmation', 'token'),
+        function ($user, $password) {
+            $user->forceFill([
+                'password' => Hash::make($password),
+                'remember_token' => Str::random(60),
+            ])->save();
+
+            event(new PasswordReset($user));
+        }
+        );
+        if ($status == Password::PASSWORD_RESET) {
+             return response()->json(['message' => 'your password has been reset successfully']);
+        }
+        else
+        {
+            return response()->json(['message' => 'Fail  to reset your password']);
+        }
     }
 }
