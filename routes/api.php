@@ -44,6 +44,7 @@ Route::get('/email/verify', function () {
 })->middleware('auth')->name('verification.notice');
 //verfiy email
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    \Log::info(auth()->user());
     $request->fulfill();
     return response()->json(['message' => 'Email verified']);
 })->middleware(['auth:sanctum', 'signed'])->name('verification.verify');
@@ -58,3 +59,6 @@ Route::post('/email/verification-notification', function (Request $request) {
 
     return response()->json(['message' => 'Verification link sent']);
 })->middleware(['auth:sanctum', 'throttle:6,1'])->name('verification.send');
+
+Route::Post('/forget-password',[LoginController::class,'forget_password'])->middleware('guest');
+Route::Post('/reset-password',[LoginController::class,'reset_password'])->middleware('guest');
