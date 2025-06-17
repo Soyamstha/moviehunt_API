@@ -35,7 +35,7 @@ class ResetPasswordNotification extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-       $resetUrl = url("/reset-password?token={$this->token}&email={$notifiable->email}");
+       $resetUrl = url("api/reset-password?token={$this->token}&email={$notifiable->email}");
 
         return (new MailMessage)
             ->subject('Reset Your Password - MovieHunt')
@@ -44,7 +44,6 @@ class ResetPasswordNotification extends Notification
             ->action('Reset Password', $resetUrl)
             ->line('If you did not request a password reset, please ignore this email.')
             ->salutation('Regards, MovieHunt Team');
-
     }
 
     /**

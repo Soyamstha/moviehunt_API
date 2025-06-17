@@ -88,11 +88,12 @@ class LoginController extends Controller
     }
     function reset_password(Request $request)
     {
-        $request->validate([
-        'token' => 'required',
-        'email' => 'required|email',
-        'password' => 'required|min:8|confirmed',
-        ]);
+        // dd('here');
+        // $request->validate([
+        // 'token' => 'required',
+        // 'email' => 'required|email',
+        // 'password' => 'required|min:8|confirmed',
+        // ]);
         $status = Password::reset(
         $request->only('email', 'password', 'password_confirmation', 'token'),
         function ($user, $password) {
