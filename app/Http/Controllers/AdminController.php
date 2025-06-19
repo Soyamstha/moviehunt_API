@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\Movie;
 use App\Models\User;
 use App\Models\Genre;
@@ -11,35 +12,31 @@ class AdminController extends Controller
 {
     function add_movie(Request $request)
     {
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'release_date' => 'required|date',
-            'duration'=> 'required|integer|min:100',
+            'duration' => 'required|integer|min:100',
             'rating' => 'required|String|min:0|max:10',
             'language' => 'required|string|max:255',
-            'thumbnail_url' => 'required|url',
+            'thumbnail_url' => 'required',
             'trailer_url' => 'required|url',
             'video_url' => 'required|url',
             'genres' => 'required|array',
             'genres.*' => 'exists:genres,id'
         ]);
-// dd($validated);
-        // $movie = new Movie();
-        // $movie->title = $request->input('title');
-        // $movie->description = $request->input('description');
-        // $movie->release_date = $request->input('release_date');
-        // $movie->duration = $request->input('duration');
-        // $movie->rating = $request->input('rating');
-        // $movie->language = $request->input('language');
-        // $movie->thumbnail_url = $request->input('thumbnail_url');
-        // $movie->trailer_url = $request->input('trailer_url');
-        // $movie->video_url = $request->input('video_url');
-        // $movie->save();
+        $thumbnail_url = $request->thumbnail_url;
 
+        $trailer_url = $request->trailer_url;
+        $video_url = $request->video_url;
         unset($validated['genres']);
-$movie = Movie::create($validated);
-$movie->genres()->attach($request->input('genres'));
+        $movie = Movie::create($validated);
+        $movie->addMediaFromUrl($thumbnail_url)->toMediaCollection('preview');
+
+        // $movie->addMediaFromUrl($trailer_url)->toMediaCollection();
+        // $movie->addMediaFromUrl($video_url)->toMediaCollection();
+        $movie->genres()->attach($request->input('genres'));
         // $moviegenres = [];
         // foreach ($request->input('genres') as $genreId) {
         //     $moviegenres[] = [
@@ -68,7 +65,7 @@ $movie->genres()->attach($request->input('genres'));
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'release_date' => 'required|date',
-            'duration'=> 'required|integer|min:100',
+            'duration' => 'required|integer|min:100',
             'rating' => 'required|String|min:0|max:10',
             'language' => 'required|string|max:255',
             'thumbnail_url' => 'required|url',
@@ -85,8 +82,7 @@ $movie->genres()->attach($request->input('genres'));
     function delete_movie($id)
     {
         $movie = Movie::find($id);
-        if (!$movie)
-        {
+        if (!$movie) {
             return response()->json(['message' => 'Movie not found'], 404);
         }
         $movie->genres()->detach();
@@ -95,12 +91,11 @@ $movie->genres()->attach($request->input('genres'));
     }
     function user_admin_access($id)
     {
-        $user=User::find($id);
-        if(!$user)
-        {
+        $user = User::find($id);
+        if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
-        $user->is_admin =true;
+        $user->is_admin = true;
         $user->save();
     }
 }

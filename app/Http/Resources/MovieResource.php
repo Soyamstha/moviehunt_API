@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Movie;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -23,6 +24,7 @@ class MovieResource extends JsonResource
             'duration' => $this->duration,
             'rating' => $this->rating,
             'language' => $this->language,
+            // 'thumbnail_url' => $this->getFirstMediaUrl('preview','thumbnail'),
             'thumbnail_url' => $this->thumbnail_url,
             'trailer_url' => $this->trailer_url,
             'video_url' => $this->video_url,

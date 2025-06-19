@@ -12,6 +12,9 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\password;
 use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 
 class LoginController extends Controller
 {
@@ -23,7 +26,7 @@ class LoginController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
         $user = null;
-        \DB::transaction(function () use ($request, &$user) {
+        DB::transaction(function () use ($request, &$user) {
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -52,7 +55,7 @@ class LoginController extends Controller
             'password' => 'required|string',
         ]);
         if (!auth()->attempt($request->only('email', 'password'))) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
+            return apiErrorResponse('Invalid credentials', 401);
         }
 
         $user = auth()->user();
@@ -74,35 +77,54 @@ class LoginController extends Controller
     }
     function forget_password(Request $request)
     {
+        // $request->validate([
+        //     'email' => 'required|string|email',
+        // ]);
         $request->validate([
-            'email' => 'required|string|email',
+            'email' => ['required', 'email', 'exists:users,email'],
         ]);
-        $status = Password::sendResetLink($request->only('email'));
-        if ($status === Password::RESET_LINK_SENT) {
+        $user = DB::table('users')->where('email', $request->email)->first();
+        $token = strtoupper(str()->random(8));
+
+        DB::table('password_reset_tokens')->updateOrInsert([
+            'email' => $request->email
+        ],[
+            'created_at' => now(), 'token' => bcrypt($token)
+        ]);
+
+        Mail::send('auth.password-reset', ['token' => $token, 'user' => $user], function ($message) use ($request) {
+            $message->to($request->email);
+            $message->subject('Reset Password');
+        });
             return response()->json(['message' => 'Forget password Link has been send to your email']);
-        }
-        else
-        {
-            return response()->json(['message' => 'Fail  to send link to your email']);
-        }
+
+        // return $this->apiSuccess('a mail has been sent to your email');
+        // $status = Password::sendResetLink($request->only('email'));
+        // if ($status === Password::RESET_LINK_SENT) {
+        //     return response()->json(['message' => 'Forget password Link has been send to your email']);
+        // }
+        // else
+        // {
+        //     return response()->json(['message' => 'Fail  to send link to your email']);
+        // }
     }
     function reset_password(Request $request)
     {
-        // dd('here');
-        // $request->validate([
-        // 'token' => 'required',
-        // 'email' => 'required|email',
-        // 'password' => 'required|min:8|confirmed',
-        // ]);
+        $request->validate([
+        'token' => 'required',
+        'email' => 'required|email',
+        'password' => 'required|min:8|confirmed',
+        ]);
+        // return $request->only('email', 'password', 'password_confirmation', 'token');
         $status = Password::reset(
         $request->only('email', 'password', 'password_confirmation', 'token'),
-        function ($user, $password) {
+        function ($user) use($request) {
             $user->forceFill([
-                'password' => Hash::make($password),
-                'remember_token' => Str::random(60),
+                'password' => $request->password,
+                'remember_token' => str()->random(60),
             ])->save();
 
-            event(new PasswordReset($user));
+            // event(new PasswordReset($user));
         }
         );
         if ($status == Password::PASSWORD_RESET) {

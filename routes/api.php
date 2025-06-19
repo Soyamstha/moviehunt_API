@@ -61,4 +61,4 @@ Route::post('/email/verification-notification', function (Request $request) {
 })->middleware(['auth:sanctum', 'throttle:6,1'])->name('verification.send');
 
 Route::Post('/forget-password',[LoginController::class,'forget_password']);
-Route::get('/reset-password',[LoginController::class,'reset_password'])->name('reset-password');
+Route::Post('/reset-password',[LoginController::class,'reset_password'])->name('reset-password');
